@@ -129,9 +129,8 @@ $('#dismiss-help').onclick = () => $('#guide').close();
 document.addEventListener('keydown', e => {
   if (e.isComposing || e.keyCode === 229 || !e.metaKey || document.querySelector('dialog[open]')) return;
   const key = e.key.toLowerCase();
-  if (['s', 'o', 'n', 'z', 'w'].includes(key)) e.preventDefault();
+  if (['s', 'n', 'z', 'w'].includes(key)) e.preventDefault();
   if (key === 's') save(e.shiftKey);
-  if (key === 'o') $('#open').click();
   if (key === 'n') $('#new').click();
   if (key === 'z') e.shiftKey ? history(redo, undo) : history(undo, redo);
   if (key === 'w') requestClose();
@@ -152,6 +151,9 @@ async function requestClose() {
     await persistFolds().catch(report); await win.destroy();
   } catch (error) { report(error); } finally { closing = false; }
 }
+await win.listen('menu-open', () => {
+  if (!document.querySelector('dialog[open]')) $('#open').click();
+});
 await win.onCloseRequested(e => { e.preventDefault(); requestClose(); });
 try {
   const loaded = await invoke('load_document'); path = loaded.path; doc = parse(loaded.text); saved = loaded.text;

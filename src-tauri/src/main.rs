@@ -8,7 +8,8 @@ use std::{
         Mutex,
     },
 };
-use tauri::{Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tauri::{Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_dialog::DialogExt;
 
 #[derive(Default)]
@@ -216,6 +217,39 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(Documents::default())
+        .menu(|app| {
+            let menu = Menu::default(app)?;
+            for item in menu.items()? {
+                if let Some(submenu) = item.as_submenu() {
+                    if submenu.text()? == "File" {
+                        submenu.insert_items(
+                            &[
+                                &MenuItem::with_id(
+                                    app,
+                                    "open-document",
+                                    "開く…",
+                                    true,
+                                    Some("CmdOrCtrl+O"),
+                                )?,
+                                &PredefinedMenuItem::separator(app)?,
+                            ],
+                            0,
+                        )?;
+                    }
+                }
+            }
+            Ok(menu)
+        })
+        .on_menu_event(|app, event| {
+            if event.id().as_ref() == "open-document" {
+                for window in app.webview_windows().values() {
+                    if window.is_focused().unwrap_or(false) {
+                        let _ = window.emit("menu-open", ());
+                        break;
+                    }
+                }
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             create_document,
             load_document,
