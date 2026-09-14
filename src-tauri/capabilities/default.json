@@ -1,0 +1,4 @@
+{
+  "identifier": "editor", "windows": ["main", "document-*"],
+  "permissions": ["core:default", "core:window:allow-set-title", "core:window:allow-destroy"]
+}

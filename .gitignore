@@ -1,0 +1,15 @@
+# Dependencies and build output
+/node_modules/
+/src-tauri/target/
+
+# Tauri-generated schemas
+/src-tauri/gen/schemas/
+
+# macOS metadata and local logs
+.DS_Store
+*.log
+
+# Local environment values (keep a shareable example)
+.env
+.env.*
+!.env.example

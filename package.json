@@ -1,0 +1,5 @@
+{
+  "name": "pocket-outliner", "version": "0.1.0", "private": true, "type": "module",
+  "scripts": { "dev": "tauri dev", "build": "tauri build", "test": "node --test", "check": "node --check src/app.js && cargo check --manifest-path src-tauri/Cargo.toml" },
+  "devDependencies": { "@tauri-apps/cli": "^2" }
+}
