@@ -26,7 +26,7 @@ npm run build # src-tauri/target/release/bundle/macos/Pocket Outliner.app
 | カーソルを前後の行へ移動 | ↑ / ↓ |
 | 同じ階層に行を追加 | Enter |
 | 子孫ごと階層を変更 | Tab / Shift+Tab |
-| 子孫ごと前後の兄弟と入れ替え | Option+↑ / ↓ |
+| 子孫ごと前後の兄弟と入れ替え | Shift+Command+↑ / ↓ |
 | カーソル行にズーム・アウトライン全体を表示（Viewメニュー） | Option+Command+→ / Option+Command+← |
 | 折りたたみ・展開 | Command+↑ / Command+↓、左の三角をクリック |
 | 元に戻す・やり直す | Command+Z / Shift+Command+Z |

@@ -117,7 +117,7 @@ function render(position) {
         if (e.metaKey) return;
         checkpoint(); const next = row(r.text.slice(input.selectionEnd), insertionDepth);
         r.text = r.text.slice(0, pos); insertRows([next]); active = next.id; render(0); update();
-      } else if (e.altKey && ['ArrowUp', 'ArrowDown'].includes(e.key)) {
+      } else if (e.metaKey && e.shiftKey && !e.altKey && !e.ctrlKey && ['ArrowUp', 'ArrowDown'].includes(e.key)) {
         e.preventDefault(); if (isZoomRoot) return; checkpoint(); moveBlock(doc.rows, i, e.key === 'ArrowUp' ? -1 : 1); render(pos); update();
       } else if (!e.metaKey && !e.altKey && !e.shiftKey && ['ArrowUp', 'ArrowDown'].includes(e.key)) {
         e.preventDefault(); const target = indices[indices.indexOf(i) + (e.key === 'ArrowUp' ? -1 : 1)];
