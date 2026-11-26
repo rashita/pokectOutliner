@@ -12,3 +12,9 @@ test('block move carries descendants both ways', () => { const d = parse('a\n b\
 test('indent and outdent apply to a whole subtree', () => { const d = parse('a\nb\n c'); assert.ok(indentBlock(d.rows,1,1)); assert.equal(serialize(d),'a\n b\n  c'); assert.ok(indentBlock(d.rows,1,-1)); assert.equal(serialize(d),'a\nb\n c'); assert.equal(indentBlock(d.rows,0,1),false); });
 test('drag cannot put a block inside itself', () => { const d = parse('a\n b\nc'); assert.equal(moveBefore(d.rows,0,1),false); assert.equal(serialize(d),'a\n b\nc'); });
 test('drag adopts destination depth with descendants intact', () => { const d = parse('a\n b\nc\n d'); assert.ok(moveBefore(d.rows,2,1)); assert.equal(serialize(d),'a\n c\n  d\n b'); });
+
+test('outdent promotes a subtree after its parent and leaves later siblings under the parent', () => {
+  const doc = parse('outer\n parent\n   first\n   selected\n    child\n   later\n next');
+  assert.ok(indentBlock(doc.rows, 3, -1));
+  assert.equal(serialize(doc), 'outer\n parent\n   first\n   later\n selected\n  child\n next');
+});

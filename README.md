@@ -2,6 +2,8 @@
 
 Mac向けの小さなテキストアウトライナー。Tauri 2と素のHTML/CSS/JavaScriptで実装しています。UIフレームワーク、エディターライブラリ、Markdownパーサー、フロントエンドのビルドツールは使用していません。ネイティブのファイル選択にTauri公式のdialogプラグインを使っています。
 
+次回検討する課題は [TODO.md](TODO.md) を参照してください。
+
 ## 起動
 
 Node.js、Rust、Xcode Command Line Toolsが必要です。
@@ -25,14 +27,20 @@ npm run build # src-tauri/target/release/bundle/macos/Pocket Outliner.app
 | 同じ階層に行を追加 | Enter |
 | 子孫ごと階層を変更 | Tab / Shift+Tab |
 | 子孫ごと前後の兄弟と入れ替え | Option+↑ / ↓ |
-| 折りたたみ・展開 | Command+Enter、左の三角をクリック |
+| カーソル行にズーム・アウトライン全体を表示（Viewメニュー） | Option+Command+→ / Option+Command+← |
+| 折りたたみ・展開 | Command+↑ / Command+↓、左の三角をクリック |
 | 元に戻す・やり直す | Command+Z / Shift+Command+Z |
 | 新規ウィンドウ | Command+N |
 | 開く（複数選択可・各ファイル別ウィンドウ） | Command+O |
 | 保存・名前を付けて保存 | Command+S / Shift+Command+S |
 | ウィンドウを閉じる | Command+W |
+| 操作ガイド | Shift+Command+/ |
 
-左端の点・三角をドラッグすると、移動先の行の前へ、その階層に合わせてブロックを移動します。Enterは子孫がある場合、その子孫の後に兄弟行を追加します。行頭でBackspaceを押すと1階層浅くなり、最上位の空行は子孫がなければ削除されます。日本語IMEの変換確定Enterは行追加に使用しません。
+新規ウィンドウ、開く、保存、名前を付けて保存は「File」メニュー、操作ガイドは「Help」メニューからも実行できます。
+
+「View」→「カラーモード」でMacのデフォルト、ライトモード、ダークモードを選べます。選択はすべてのウィンドウに適用され、次回起動時にも引き継がれます。
+
+左端の点・三角をドラッグすると、移動先の行の前へ、その階層に合わせてブロックを移動します。Enterは子孫がある場合、その子孫の後に兄弟行を追加します。Shift+Tabまたは行頭のBackspaceで、項目とその子孫を元の親のブロックの直後へ移します。最上位の空行は、子孫がなければ行頭のBackspaceで削除されます。日本語IMEの変換確定Enterは行追加に使用しません。
 
 ## ファイル
 

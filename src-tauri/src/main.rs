@@ -8,8 +8,8 @@ use std::{
         Mutex,
     },
 };
-use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
-use tauri::{Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::{Emitter, Manager, Theme, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_dialog::DialogExt;
 
 #[derive(Default)]
@@ -213,6 +213,57 @@ fn save_folds(
     }
     Ok(())
 }
+const COLOR_MODES: [(&str, &str, Option<Theme>); 3] = [
+    ("theme-system", "Macのデフォルトに合わせる", None),
+    ("theme-light", "ライトモード", Some(Theme::Light)),
+    ("theme-dark", "ダークモード", Some(Theme::Dark)),
+];
+
+struct ColorMenu(Vec<CheckMenuItem<tauri::Wry>>);
+
+fn color_mode_path(app: &tauri::AppHandle) -> tauri::Result<PathBuf> {
+    Ok(app.path().app_config_dir()?.join("color-mode"))
+}
+
+fn color_menu(app: &tauri::AppHandle) -> tauri::Result<Submenu<tauri::Wry>> {
+    let submenu = Submenu::new(app, "カラーモード", true)?;
+    let mut items = Vec::new();
+    for (id, title, _) in COLOR_MODES {
+        let item =
+            CheckMenuItem::with_id(app, id, title, true, id == COLOR_MODES[0].0, None::<&str>)?;
+        submenu.append(&item)?;
+        items.push(item);
+    }
+    app.manage(ColorMenu(items));
+    Ok(submenu)
+}
+
+fn apply_color_mode(app: &tauri::AppHandle, id: &str, theme: Option<Theme>) {
+    app.set_theme(theme);
+    let Some(menu) = app.try_state::<ColorMenu>() else {
+        return;
+    };
+    for item in &menu.0 {
+        if let Err(error) = item.set_checked(item.id().as_ref() == id) {
+            eprintln!("Could not update the color mode menu: {error}");
+        }
+    }
+}
+
+fn save_color_mode(app: &tauri::AppHandle, id: &str) {
+    let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+        let path = color_mode_path(app)?;
+        fs::create_dir_all(app.path().app_config_dir()?)?;
+        let temporary = path.with_extension("tmp");
+        fs::write(&temporary, id)?;
+        fs::rename(temporary, path)?;
+        Ok(())
+    })();
+    if let Err(error) = result {
+        eprintln!("Could not save the color mode: {error}");
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -221,30 +272,108 @@ fn main() {
             let menu = Menu::default(app)?;
             for item in menu.items()? {
                 if let Some(submenu) = item.as_submenu() {
-                    if submenu.text()? == "File" {
-                        submenu.insert_items(
-                            &[
+                    match submenu.text()?.as_str() {
+                        "File" => {
+                            submenu.insert_items(
+                                &[
+                                    &MenuItem::with_id(
+                                        app,
+                                        "new-document",
+                                        "新規ウィンドウ",
+                                        true,
+                                        Some("CmdOrCtrl+N"),
+                                    )?,
+                                    &MenuItem::with_id(
+                                        app,
+                                        "open-document",
+                                        "開く…",
+                                        true,
+                                        Some("CmdOrCtrl+O"),
+                                    )?,
+                                    &PredefinedMenuItem::separator(app)?,
+                                    &MenuItem::with_id(
+                                        app,
+                                        "save-document",
+                                        "保存",
+                                        true,
+                                        Some("CmdOrCtrl+S"),
+                                    )?,
+                                    &MenuItem::with_id(
+                                        app,
+                                        "save-document-as",
+                                        "名前を付けて保存…",
+                                        true,
+                                        Some("CmdOrCtrl+Shift+S"),
+                                    )?,
+                                    &PredefinedMenuItem::separator(app)?,
+                                ],
+                                0,
+                            )?;
+                        }
+                        "View" => {
+                            submenu.append_items(&[
+                                &PredefinedMenuItem::separator(app)?,
                                 &MenuItem::with_id(
                                     app,
-                                    "open-document",
-                                    "開く…",
+                                    "zoom-row",
+                                    "カーソル行にズーム",
                                     true,
-                                    Some("CmdOrCtrl+O"),
+                                    Some("CmdOrCtrl+Alt+Right"),
                                 )?,
-                                &PredefinedMenuItem::separator(app)?,
-                            ],
-                            0,
-                        )?;
+                                &MenuItem::with_id(
+                                    app,
+                                    "zoom-reset",
+                                    "アウトライン全体を表示",
+                                    true,
+                                    Some("CmdOrCtrl+Alt+Left"),
+                                )?,
+                            ])?;
+                            submenu.append(&color_menu(app)?)?;
+                        }
+                        "Help" => submenu.append(&MenuItem::with_id(
+                            app,
+                            "show-guide",
+                            "操作ガイド",
+                            true,
+                            Some("CmdOrCtrl+Shift+Slash"),
+                        )?)?,
+                        _ => {}
                     }
                 }
             }
             Ok(menu)
         })
+        .setup(|app| {
+            let saved = color_mode_path(app.handle())
+                .ok()
+                .and_then(|path| fs::read_to_string(path).ok());
+            let selected = COLOR_MODES
+                .iter()
+                .find(|(id, _, _)| Some(*id) == saved.as_deref())
+                .unwrap_or(&COLOR_MODES[0]);
+            apply_color_mode(app.handle(), selected.0, selected.2);
+            Ok(())
+        })
         .on_menu_event(|app, event| {
-            if event.id().as_ref() == "open-document" {
+            let action = event.id().as_ref();
+            if let Some((id, _, theme)) = COLOR_MODES.iter().find(|(id, _, _)| *id == action) {
+                apply_color_mode(app, id, *theme);
+                save_color_mode(app, id);
+                return;
+            }
+            if matches!(
+                action,
+                "new-document"
+                    | "open-document"
+                    | "save-document"
+                    | "save-document-as"
+                    | "show-guide"
+                    | "zoom-row"
+                    | "zoom-reset"
+            ) {
                 for window in app.webview_windows().values() {
                     if window.is_focused().unwrap_or(false) {
-                        let _ = window.emit("menu-open", ());
+                        let _ = window.emit("menu-action", action);
                         break;
                     }
                 }

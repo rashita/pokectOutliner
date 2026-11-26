@@ -30,15 +30,32 @@ export function endOf(rows, index) {
   while (end < rows.length && rows[end].depth > rows[index].depth) end++;
   return end;
 }
-export function visible(rows) {
+export function visible(rows, start = 0, end = rows.length) {
   const result = [];
-  for (let i = 0; i < rows.length;) { result.push(i); i = rows[i].folded ? endOf(rows, i) : i + 1; }
+  for (let i = start; i < end;) { result.push(i); i = rows[i].folded ? endOf(rows, i) : i + 1; }
   return result;
+}
+export function parentOf(rows, index) {
+  const depth = rows[index].depth;
+  let parent = index - 1;
+  while (parent >= 0 && rows[parent].depth >= depth) parent--;
+  return parent;
 }
 export function indentBlock(rows, index, delta) {
   const end = endOf(rows, index);
   if (rows[index].depth + delta < 0) return false;
   if (delta > 0 && (index === 0 || rows[index].depth >= rows[index - 1].depth + 1)) return false;
+  if (delta < 0) {
+    const parent = parentOf(rows, index);
+    if (parent >= 0) {
+      const parentEnd = endOf(rows, parent);
+      const shift = rows[parent].depth - rows[index].depth;
+      const block = rows.splice(index, end - index);
+      for (const item of block) item.depth += shift;
+      rows.splice(parentEnd - block.length, 0, ...block);
+      return true;
+    }
+  }
   for (let i = index; i < end; i++) rows[i].depth += delta;
   return true;
 }
